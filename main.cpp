@@ -283,13 +283,16 @@ private:
         io_uring_sqe * sqe = io_uring_get_sqe(&__ring);
         req->event_type = EVENT_TYPE::WRITE;
 
+        // send header
+        sqe->flags |= IOSQE_IO_LINK;
         io_uring_prep_write(sqe,req->client_fd,req->http_head.data(),req->http_head.size(),0);
-        // io_uring_sqe_set_data(sqe,req);
-        // io_uring_submit(&__ring);
+        io_uring_sqe_set_data(sqe,req);
+
         // send body
         sqe = io_uring_get_sqe(&__ring);
         io_uring_prep_write(sqe,req->client_fd,req->send_buffer,req->send_buffer_len,0);
         io_uring_sqe_set_data(sqe,req);
+
         io_uring_submit(&__ring);
     }
 public:
