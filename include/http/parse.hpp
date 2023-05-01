@@ -4,8 +4,11 @@
 #include<unordered_map>
 #include<string_view>
 #include<iostream>
+#include<fmt/core.h>
+
 #include"../config.hpp"
-#include"../Event.hpp"
+#include"../Buffer.hpp"
+#include"../io_uring_stuff.hpp"
 
 #include<sys/stat.h>
 #include<stdio.h>
@@ -121,38 +124,23 @@ class ParseHttpHead
         else
         {
             path = fmt::format("public{}",url);
+            try
+            {
+                auto arg_start = toNextBlank(url,0,'?');// if not has '?' throw an error
+                auto args = url.substr(arg_start+1);
+                url = url.substr(1,arg_start);
+                path = http_get_handles.getResult(url,args);// throw error
+            }
+            catch(char const * e)
+            {
+
+            }
         }
         //check?a=...&b=...&c=...
         // find first '?'
-        try
-        {
-            auto arg_start = toNextBlank(url,0,'?');// if not has '?' throw an error
-            auto args = url.substr(arg_start+1);
-            url = url.substr(1,arg_start);
-            path = http_get_handles.getResult(url,args);// throw error
-        }
-        catch(char const * e){}
-        
-
-
         // check path is exists
-        struct stat path_stat;
-        if(::stat(path.c_str(),&path_stat) == -1)
-            throw "file not exists";
-        auto block_num = path_stat.st_size/path_stat.st_blksize + (path_stat.st_size%path_stat.st_blksize != 0);
-        
-        int file_fd = ::open(path.c_str(),O_RDONLY);
-        auto map_addr = ::mmap(nullptr, block_num * path_stat.st_blksize,PROT_READ,MAP_SHARED,file_fd,0);
-        if(map_addr == MAP_FAILED)
-        {
-            std::cerr<<::strerror(errno)<<std::endl;
-            throw "map failed.";
-        }
-            
-        req->send_buffer = map_addr;
-        req->send_buffer_len = path_stat.st_size;
-
-        close(file_fd);
+        req->send_buffer->appendNext(0);
+        req->send_buffer->next->mmapMem(path);
         index++;
         return {index,getFileType(path)};
     }
@@ -183,8 +171,9 @@ class ParseHttpHead
         return index;
     }
 public:
-    ParseHttpHead(std::string_view full_head,request * req)
+    ParseHttpHead(request * req)
     {
+        std::string_view full_head = static_cast<char *>(req->recv_buffer->mem);
         try
         {
             size_t start_index = 0;
@@ -192,24 +181,22 @@ public:
             auto [index,type] = parseHttpUrl(full_head,start_index,req);
             start_index = index;
             start_index = parseHttpVersion(full_head,start_index);
-
             // prepare head
-            req->http_head = "HTTP/1.0 200 OK\r\n";
-            req->http_head += fmt::format("Content-type: {}\r\n",type);
-            req->http_head += fmt::format("Content-length: {}\r\n\r\n",req->send_buffer_len);
+            auto && head = fmt::format("HTTP/1.0 200 OK\r\nContent-type: {}\r\nContent-length: {}\r\n\r\n",type ,req->send_buffer->next->buffer_len);
+            req->send_buffer->copy(head.data());
         }
         catch(char const* e)
         {
             // 404
             if(::strcmp(e,"method is not implemented.")!=0)
             {
-                req->send_buffer = static_cast<const void *>(http_404_content);
-                req->send_buffer_len = ::strlen(http_404_content);
+                req->send_buffer->copy(http_404_content);
+                req->send_buffer->dropTail();
             }
             else
             {
-                req->send_buffer = static_cast<const void *>(unimplemented_content);
-                req->send_buffer_len = ::strlen(unimplemented_content);
+                req->send_buffer->copy(unimplemented_content);
+                req->send_buffer->dropTail();
             }
         }
     }

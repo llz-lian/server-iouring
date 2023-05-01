@@ -19,35 +19,21 @@
 
 #include"config.hpp"
 #include"Event.hpp"
-#include"http/parse.hpp"
-#include"redis_cli/redis_client.hpp"
+#include"Protocol.hpp"
+#include"io_uring_stuff.hpp"
 
-inline io_uring __ring;
 class IoUringServer
 {
 private:
     int __listen_fd;
+    Protocol * todo;
     std::unordered_map<int,request*> __requests;
-    void __acceptFd(sockaddr_in * client_addr,socklen_t * client_addr_len)
-    {
-        io_uring_sqe * sqe = io_uring_get_sqe(&__ring);
-        io_uring_prep_accept(sqe,__listen_fd,reinterpret_cast<sockaddr *>(client_addr),client_addr_len,0);
-        request * req = new request;
-        io_uring_sqe_set_data(sqe,req);
-        io_uring_submit(&__ring);
-    }
     void __Handleread(int client_fd)
     {
-        io_uring_sqe * sqe = io_uring_get_sqe(&__ring);
         request * req = new request;
         __requests[client_fd] = req;
         req->client_fd = client_fd;
-
-        req->event_type = EVENT_TYPE::READ;
-        req->read_buffer.resize(READ_SZ);
-        io_uring_prep_read(sqe,client_fd,req->read_buffer.data(),req->read_buffer.size(),0);
-        io_uring_sqe_set_data(sqe,req);
-        io_uring_submit(&__ring);
+        appRead(req);
     }
     void __handleProcess(request * req)
     {
@@ -55,28 +41,26 @@ private:
         // req->send_buffer = req->read_buffer;
         // or..
         // parse http head set req->buffer
-        ParseHttpHead(req->read_buffer,req);
+        // ParseHttpHead(req->read_buffer,req);
+        todo->work(req);
         // std::cout<<"send."<<std::endl;
     }
     void __handleWrite(request * req)
     {
-        io_uring_sqe * sqe = io_uring_get_sqe(&__ring);
-        req->event_type = EVENT_TYPE::WRITE;
-
-        // send header
-        sqe->flags |= IOSQE_IO_LINK;
-        io_uring_prep_write(sqe,req->client_fd,req->http_head.data(),req->http_head.size(),0);
-        io_uring_sqe_set_data(sqe,req);
-
-        // send body
-        sqe = io_uring_get_sqe(&__ring);
-        io_uring_prep_write(sqe,req->client_fd,req->send_buffer,req->send_buffer_len,0);
-        io_uring_sqe_set_data(sqe,req);
-
-        io_uring_submit(&__ring);
+        appWrite(req);
     }
+
+    void __afterWrite(request * req)
+    {
+        int client_fd = req->client_fd;
+        close(client_fd);
+        __requests.erase(client_fd);
+        delete req;
+    }
+
 public:
-    IoUringServer(int port)
+    IoUringServer(int port,Protocol * p)
+        :todo(p)
     {
         // init ring
         io_uring_queue_init(QUEUE_DEPTH,&__ring, 0);
@@ -111,7 +95,7 @@ public:
         sockaddr_in client_addr;
         socklen_t client_addr_len = sizeof(sockaddr_in);
         // loop
-        __acceptFd(&client_addr,&client_addr_len);
+        appAccept(&client_addr,&client_addr_len,__listen_fd);
         while(true)
         {
             int ret = io_uring_wait_cqe(&__ring,&cqe);
@@ -130,7 +114,7 @@ public:
             {
                 case EVENT_TYPE::ACCEPT:
                 // accept complete
-                    __acceptFd(&client_addr,&client_addr_len);// append accept
+                    appAccept(&client_addr,&client_addr_len,__listen_fd);// append accept
                     __Handleread(cqe->res);
                     break;
                 case EVENT_TYPE::READ:
@@ -140,51 +124,9 @@ public:
                     break;
                 case EVENT_TYPE::WRITE:
                 // write complete
-
-                    int client_fd = req->client_fd;
-                    close(client_fd);
-                    auto munmap_ret = ::munmap(const_cast<void *>(req->send_buffer),req->send_buffer_len);
-                    if(munmap_ret<0)
-                    {
-                        std::cerr<<fmt::format("munmap error: {}.",::strerror(errno))<<std::endl;
-                    }
-                    // __requests[client_fd] = nullptr;
-                    __requests.erase(client_fd);
-                    delete req;
+                    __afterWrite(req);
             }
             io_uring_cqe_seen(&__ring,cqe);
         }
-    }
-};
-
-
-class IoUringClient
-{
-private:
-    int __fd;
-    void __handleWrite(request * req)
-    {
-        io_uring_sqe * sqe = io_uring_get_sqe(&__ring);
-        io_uring_prep_write(sqe,req->client_fd,req->send_buffer,req->send_buffer_len,0);
-        io_uring_sqe_set_data(sqe,req);
-        io_uring_submit(&__ring);
-    }
-public:
-    IoUringClient(std::string_view ip, int port)
-    {
-        sockaddr_in server_addr;
-        memset(&server_addr,0,sizeof server_addr);
-        server_addr.sin_family = PF_INET;
-        server_addr.sin_port = ::htons(port);
-        ::inet_pton(PF_INET,ip.data(),&server_addr.sin_addr.s_addr);
-        __fd = ::socket(PF_INET,SOCK_STREAM,0);
-        // connect
-        if(connect(__fd,reinterpret_cast<const sockaddr*>(&server_addr),sizeof(socklen_t))<0)
-        {
-        }
-    }
-    void sendRequest(request * req)
-    {
-        __handleWrite(req);
     }
 };

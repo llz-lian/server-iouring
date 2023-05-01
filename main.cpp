@@ -1,18 +1,13 @@
 #include"include/Server.hpp"
-
+#include"include/http/HttpProtocol.hpp"
 
 
 
 
 int main()
 {
-    IoUringClient redis_client(REDIS_IP,REDIS_PORT);
-
-
-    IoUringServer server(DEFALUT_PORT);
-
-
-
+    auto proto = Http("HTTP");
+    IoUringServer server(DEFALUT_PORT,&proto);
     server.run();
 }
 
