@@ -52,7 +52,7 @@ struct Buffer
     {
         if(next)
         {
-            next->~Buffer();
+            delete next;
         }
         next = nullptr;
     }
@@ -78,7 +78,8 @@ struct Buffer
         size_t len = ::strlen(buf);
         if(len!=buffer_len)
         {
-            ::realloc(mem,len+1);
+            auto new_ptr = ::realloc(mem,len+1);
+            if(new_ptr) mem = new_ptr;
         }
         buffer_len = len;
         ::memset(mem,0,sizeof(unsigned char) * buffer_len);

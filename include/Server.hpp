@@ -34,8 +34,8 @@ private:
         __requests[client_fd] = req;
         req->client_fd = client_fd;
         // non-block?
-        // int flags = fcntl(client_fd, F_GETFL, 0);
-        // fcntl(client_fd, F_SETFL, flags|O_NONBLOCK);
+        int flags = fcntl(client_fd, F_GETFL, 0);
+        fcntl(client_fd, F_SETFL, flags|O_NONBLOCK);
 
         appRead(req);
     }
@@ -68,7 +68,7 @@ public:
     {
         // init ring
         io_uring_queue_init(QUEUE_DEPTH,&__ring, IORING_SETUP_SQPOLL);
-        unsigned int max_workers []= {1,1};
+        unsigned int max_workers []= {2,2};
         auto worker_ret = io_uring_register_iowq_max_workers(&__ring,max_workers);
         // set listen_fd
         __listen_fd = ::socket(PF_INET,SOCK_STREAM,0); 
