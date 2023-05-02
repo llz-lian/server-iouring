@@ -13,7 +13,9 @@ struct Buffer
     size_t buffer_len;
     
     Buffer(size_t buffer_len)
-        :buffer_len(buffer_len),mem(::malloc(buffer_len * sizeof(unsigned char))){
+        :buffer_len(buffer_len)
+        {
+            mem = ::malloc(buffer_len * sizeof(unsigned char));
             ::memset(mem,0,sizeof(unsigned char) * buffer_len);
         }
     void mmapMem(std::string file_path)
@@ -76,12 +78,10 @@ struct Buffer
     void copy(const char * buf)
     {
         size_t len = ::strlen(buf);
-        if(len!=buffer_len)
-        {
-            auto new_ptr = ::realloc(mem,len+1);
-            if(new_ptr) mem = new_ptr;
-        }
-        buffer_len = len;
+        deleteAll();
+        mem = ::malloc(len+1);
+        buffer_len = len+1;
+
         ::memset(mem,0,sizeof(unsigned char) * buffer_len);
         ::memcpy(mem,buf,len);
     }

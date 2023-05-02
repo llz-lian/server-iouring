@@ -139,8 +139,8 @@ class ParseHttpHead
         //check?a=...&b=...&c=...
         // find first '?'
         // check path is exists
-        req->send_buffer->appendNext(0);
-        req->send_buffer->next->mmapMem(path);
+        req->send_buffer.appendNext(4);
+        req->send_buffer.next->mmapMem(path);
         index++;
         return {index,getFileType(path)};
     }
@@ -148,7 +148,7 @@ class ParseHttpHead
     {
         // find \r \n
         auto index = toNextItem(full_head,start_index);
-        std::string_view version = full_head.substr(start_index,index-start_index);
+        // std::string_view version = full_head.substr(start_index,index-start_index);
         // nop \r\n to item
         index = toNextItem(full_head,index);
         return index;
@@ -165,15 +165,15 @@ class ParseHttpHead
             if(kv[split_index]==':') break;
         }
 
-        std::string_view key = kv.substr(0,split_index);
-        std::string_view value = kv.substr(split_index+1,kv.size()-split_index);
+        // std::string_view key = kv.substr(0,split_index);
+        // std::string_view value = kv.substr(split_index+1,kv.size()-split_index);
 
         return index;
     }
 public:
     ParseHttpHead(request * req)
     {
-        std::string_view full_head = static_cast<char *>(req->recv_buffer->mem);
+        std::string_view full_head = static_cast<char *>(req->recv_buffer.mem);
         try
         {
             size_t start_index = 0;
@@ -182,21 +182,21 @@ public:
             start_index = index;
             start_index = parseHttpVersion(full_head,start_index);
             // prepare head
-            auto && head = fmt::format("HTTP/1.0 200 OK\r\nContent-type: {}\r\nContent-length: {}\r\n\r\n",type ,req->send_buffer->next->buffer_len);
-            req->send_buffer->copy(head.data());
+            auto && head = fmt::format("HTTP/1.0 200 OK\r\nContent-type: {}\r\nContent-length: {}\r\n\r\n",type ,req->send_buffer.next->buffer_len);
+            req->send_buffer.copy(head.data());
         }
         catch(char const* e)
         {
             // 404
             if(::strcmp(e,"method is not implemented.")!=0)
             {
-                req->send_buffer->copy(http_404_content);
-                req->send_buffer->dropTail();
+                req->send_buffer.copy(http_404_content);
+                req->send_buffer.dropTail();
             }
             else
             {
-                req->send_buffer->copy(unimplemented_content);
-                req->send_buffer->dropTail();
+                req->send_buffer.copy(unimplemented_content);
+                req->send_buffer.dropTail();
             }
         }
     }

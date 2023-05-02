@@ -11,7 +11,7 @@
 
 #include<iostream>
 #include<fmt/core.h>
-#include<unordered_map>
+#include<unordered_set>
 #include<string_view>
 #include<string>
 #include<sstream>
@@ -27,16 +27,14 @@ class IoUringServer
 private:
     int __listen_fd;
     Protocol * todo;
-    std::unordered_map<int,request*> __requests;
-    void __Handleread(int client_fd)
+    std::unordered_set<request*> __requests;
+    void __Handleread(request * req)
     {
-        request * req = new request;
-        __requests[client_fd] = req;
-        req->client_fd = client_fd;
+        // __requests.insert(req);
+        // req->client_fd = client_fd;
         // non-block?
-        int flags = fcntl(client_fd, F_GETFL, 0);
-        fcntl(client_fd, F_SETFL, flags|O_NONBLOCK);
-
+        int flags = fcntl(req->client_fd, F_GETFL, 0);
+        fcntl(req->client_fd, F_SETFL, flags|O_NONBLOCK);
         appRead(req);
     }
     void __handleProcess(request * req)
@@ -58,7 +56,7 @@ private:
     {
         int client_fd = req->client_fd;
         close(client_fd);
-        __requests.erase(client_fd);
+        __requests.erase(req);
         delete req;
     }
 
@@ -101,7 +99,9 @@ public:
         sockaddr_in client_addr;
         socklen_t client_addr_len = sizeof(sockaddr_in);
         // loop
-        appAccept(&client_addr,&client_addr_len,__listen_fd);
+        auto new_request = new request;
+        appAccept(&client_addr,&client_addr_len,__listen_fd,new_request);
+        __requests.insert(new_request);
         while(true)
         {
             int ret = io_uring_wait_cqe(&__ring,&cqe);
@@ -111,7 +111,7 @@ public:
                 continue;
             }
             request * req = reinterpret_cast<request*>(cqe->user_data);
-            if(cqe->res<0||req == nullptr)
+            if(cqe->res<0||req == nullptr||__requests.find(req)==__requests.end())
             {
                 io_uring_cqe_seen(&__ring,cqe);
                 continue;
@@ -119,9 +119,11 @@ public:
             switch(req->event_type)
             {
                 case EVENT_TYPE::ACCEPT:
-                // accept complete
-                    appAccept(&client_addr,&client_addr_len,__listen_fd);// append accept
-                    __Handleread(cqe->res);
+                    new_request = new request;
+                    appAccept(&client_addr,&client_addr_len,__listen_fd,new_request);// append accept
+                    __requests.insert(new_request);
+                    req->client_fd = cqe->res;
+                    __Handleread(req);
                     break;
                 case EVENT_TYPE::READ:
                 // read complete
