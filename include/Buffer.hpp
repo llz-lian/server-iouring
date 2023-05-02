@@ -79,8 +79,8 @@ struct Buffer
     {
         size_t len = ::strlen(buf);
         deleteAll();
-        mem = ::malloc(len+1);
-        buffer_len = len+1;
+        mem = ::malloc(len);
+        buffer_len = len;
 
         ::memset(mem,0,sizeof(unsigned char) * buffer_len);
         ::memcpy(mem,buf,len);
