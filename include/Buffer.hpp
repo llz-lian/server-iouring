@@ -43,7 +43,7 @@ struct Buffer
         }
         else
         {
-            if(mem) delete[] static_cast<unsigned char *>(mem);
+            if(mem) ::free(mem);
         }
         mem = nullptr;
         buffer_len = 0u;

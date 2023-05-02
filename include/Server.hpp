@@ -33,6 +33,10 @@ private:
         request * req = new request;
         __requests[client_fd] = req;
         req->client_fd = client_fd;
+        // non-block?
+        // int flags = fcntl(client_fd, F_GETFL, 0);
+        // fcntl(client_fd, F_SETFL, flags|O_NONBLOCK);
+
         appRead(req);
     }
     void __handleProcess(request * req)
@@ -63,7 +67,9 @@ public:
         :todo(p)
     {
         // init ring
-        io_uring_queue_init(QUEUE_DEPTH,&__ring, 0);
+        io_uring_queue_init(QUEUE_DEPTH,&__ring, IORING_SETUP_SQPOLL);
+        unsigned int max_workers []= {1,1};
+        auto worker_ret = io_uring_register_iowq_max_workers(&__ring,max_workers);
         // set listen_fd
         __listen_fd = ::socket(PF_INET,SOCK_STREAM,0); 
         if(__listen_fd<0) throw std::runtime_error(fmt::format("socket error."));
