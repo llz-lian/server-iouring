@@ -41,7 +41,7 @@ Task Work()
 4. CSDN用户RzBu11d023r：[有点东西，虽然有点乱](https://blog.csdn.net/u010180372?type=blog)
 ## io_uring
 1. 知乎：[一篇文章带你读懂 io_uring 的接口与实现](https://zhuanlan.zhihu.com/p/380726590)
-1. c语言，包含cat、cp程序，小型webserver[lord of the io_uring](https://unixism.net/loti/)
-2. bound workers和unbound workers[wokers](https://blog.cloudflare.com/missing-manuals-io_uring-worker-pool/)
+1. c语言，包含cat、cp程序，小型webserver：[lord of the io_uring](https://unixism.net/loti/)
+2. bound workers和unbound workers：[wokers](https://blog.cloudflare.com/missing-manuals-io_uring-worker-pool/)
 3. [liburing issues](https://github.com/axboe/liburing/issues)
 4. man liburing接口
