@@ -19,6 +19,13 @@ public:
     {}
 };
 
+
+inline void setNonBlock(int client_fd)
+{
+    int flags = fcntl(client_fd, F_GETFL, 0);
+    fcntl(client_fd, F_SETFL, flags|O_NONBLOCK);
+}
+
 inline void appRead(request * req)
 {
     io_uring_sqe * sqe = io_uring_get_sqe(&__ring);
@@ -47,7 +54,7 @@ inline void appWrite(request * req)
         auto flag = buffer_ptr->next==nullptr?0u:IOSQE_IO_LINK;
         io_uring_sqe_set_flags(sqe,flag);
         io_uring_prep_write(sqe,req->client_fd,buffer_ptr->mem,buffer_ptr->buffer_len,0);
-        io_uring_sqe_set_data(sqe,nullptr);
+        // io_uring_sqe_set_data(sqe,nullptr);
         buffer_ptr = buffer_ptr->next;
     }
     io_uring_sqe_set_data(sqe,req);
