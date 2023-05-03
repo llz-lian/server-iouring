@@ -133,6 +133,40 @@ public:
                 case EVENT_TYPE::WRITE:
                 // write complete
                     __afterWrite(req);
+            /*
+                1. accept listen_fd get client_fd
+                2. read client_fd
+                3. process
+                4. wirte client_fd
+                5. continue read?goto read or return
+                Task Work()
+                {
+                    int client_fd = co_awiat Accept(listen_fd);// handle need new work
+                    http_request = new http_request;
+                    while(true)
+                    {
+                        co_awiat Read(client_fd,read_buffer);
+                        int keep_read = process(http_request);
+                        co_await Write(client_fd, write_buffer);
+                        if(!keep_read) break;
+                    }
+                    delete request;
+                    close()
+                }
+                void IoUringServer::run()
+                {
+                    Work();
+                    while(true)
+                    {
+                        int ret = io_uring_wait_cqe(&__ring,&cqe);
+                        //get handle from cqe
+                        h = cqe->user_data;
+                        if(h.need_new_work) Work();
+                        h.resume();
+                    }
+                }
+
+            */
             }
             io_uring_cqe_seen(&__ring,cqe);
         }
