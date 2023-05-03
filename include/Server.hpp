@@ -122,6 +122,7 @@ public:
 
         if(listen(__listen_fd,10)<0) throw std::runtime_error(fmt::format("listen error."));
         __requests.reserve(10000);
+        handles.reserve(10000);
     }
     
     void coroRun()
