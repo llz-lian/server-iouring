@@ -8,13 +8,13 @@
 
 int main()
 {
-    // if(::fork()>0)
-    //     return 0;
-    // ::setsid();
-    // ::umask(0);
+    if(::fork()>0)
+        return 0;
+    ::setsid();
+    ::umask(0);
     auto proto = Http("HTTP");
     IoUringServer server(DEFALUT_PORT,&proto);
     server.coroRun();
-    server.run();
+    // server.run();
 }
 

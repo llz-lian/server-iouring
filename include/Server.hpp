@@ -71,20 +71,20 @@ private:
 
         int client_fd = co_await acpt;// handle need new work
         req->client_fd = client_fd;
-        std::cout<<fmt::format("accept fd: {}",client_fd)<<std::endl;
-        int max_service_time = 2;
-        while(max_service_time-->0)
-        {
+        // std::cout<<fmt::format("accept fd: {}",client_fd)<<std::endl;
+        // int max_service_time = 2;
+        // while(max_service_time-->0)
+        // {
             int read_num = co_await rd;
-            std::cout<<fmt::format("read data: {} bytes.",read_num)<<std::endl;
-            // read 0 need close ref man recv
-            if(read_num == 0) break;
+            // std::cout<<fmt::format("read data: {} bytes.",read_num)<<std::endl;
+            // read 0 need close ref: man recv
+            // if(read_num == 0) break;
             todo->work(req);
             int write_num = co_await wt;
-            std::cout<<fmt::format("write data: {} bytes.",write_num)<<std::endl;
+            // std::cout<<fmt::format("write data: {} bytes.",write_num)<<std::endl;
             // co_await std::suspend_always{};
-        }
-        std::cout<<fmt::format("close fd: {}",client_fd)<<std::endl;
+        // }
+        // std::cout<<fmt::format("close fd: {}",client_fd)<<std::endl;
         close(client_fd);
         delete req;
         // done
@@ -141,7 +141,6 @@ public:
             if(cqe->res<0||req == nullptr||handles.find(req)==handles.end())
             {
                 io_uring_cqe_seen(&__ring,cqe);
-                std::cout<<"whaaa\n";
                 continue;
             }
             if(req->event_type==EVENT_TYPE::ACCEPT)
