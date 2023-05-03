@@ -12,6 +12,29 @@
 # 参考资料
 ## c++ 协程
 图最好背下来
+要明白任务类似这种：
+1. accept listen_fd get client_fd
+2. read client_fd
+3. process
+4. wirte client_fd
+5. continue read?goto read or return
+```
+Task Work()
+{
+    http_request = new http_request;
+    int client_fd = co_awiat Accept(listen_fd);// handle need new work
+    // client_fd = await_resume(); cqe->res;
+    while(true)
+    {
+        int read_num = co_awiat Read(client_fd,read_buffer);
+        int keep_read = process(http_request);
+        co_await Write(client_fd, write_buffer);
+        if(!keep_read) break;
+    }
+    delete request;
+    close()
+}
+```
 1. 知乎：[C++20协程不完全指南](https://zhuanlan.zhihu.com/p/436133279)
 2. cpp reference：[link](https://zh.cppreference.com/w/cpp/language/coroutines)
 3. 知乎：[如何编写 C++ 20 协程(Coroutines)](https://zhuanlan.zhihu.com/p/355100152)
