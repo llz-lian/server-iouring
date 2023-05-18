@@ -17,9 +17,6 @@ namespace Handler
     decltype(auto) htmlHandle(Args & ...args);
     template<int i,class ... Args>
     decltype(auto) htmlHandle(Args && ...args);
-    struct Handle {};
-    struct Login :public Handle {};
-    struct Register :public Handle {};
     template<>
     decltype(auto) htmlHandle<Login,std::string, std::string>
     (std::string & user_name, std::string & password)
@@ -57,5 +54,12 @@ namespace Handler
         }
         return std::string("public/sign_up.html");
     }
+
 };
 
+// namespace Handler
+// {
+//     enum{next = regist+1};//....
+//     template<>
+//     decltype(auto) htmlHandle<next ,......>(.....);
+// };
