@@ -5,6 +5,8 @@
 #include"io_uring_stuff.hpp"
 class Http:public Protocol
 {
+private:
+    
 public:
     using Protocol::Protocol;
     virtual void work(request * r) override
