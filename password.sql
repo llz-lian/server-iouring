@@ -6,5 +6,4 @@ create table user_password(
     primary key(user_name,password)
 ); */
 
-insert into user_password values("223","2234");
-/* select * from user_password; */
+select * from user_password;

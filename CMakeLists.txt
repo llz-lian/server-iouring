@@ -4,10 +4,10 @@ project(server_uring VERSION 0.1.0)
 set (CMAKE_C_COMPILER "/usr/bin/gcc")
 set (CMAKE_CXX_COMPILER "/usr/bin/g++")
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -std=c++20 -luring -lfmt -Wall")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -std=c++20 -luring -lfmt -lmysqlpp")
 
 include_directories("./include")
 
 add_executable(server_uring main.cpp)
 
-target_link_libraries(server_uring fmt uring)
+target_link_libraries(server_uring fmt uring mysqlpp)

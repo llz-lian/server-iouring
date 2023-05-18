@@ -1,29 +1,61 @@
+#define MYSQLPP_MYSQL_HEADERS_BURIED
+
 #include<string>
 #include<string_view>
-#define MYSQLPP_MYSQL_HEADERS_BURIED
 #include<mysql++/mysql++.h>
 #include<fmt/core.h>
-
-class Handler
+#include<unordered_map>
+namespace DATABASE
 {
-private:
-    mysqlpp::Connection database_conn{false};
-public:
-    
-
+    inline mysqlpp::Connection database_conn;
+    // bool conn = database_conn.connect("server_uring","localhost","root","llzllz123",0);
+};
+namespace Handler
+{
+    enum {Login,regist};
+    template<int i,class ... Args>
+    decltype(auto) htmlHandle(Args & ...args);
+    template<int i,class ... Args>
+    decltype(auto) htmlHandle(Args && ...args);
+    struct Handle {};
+    struct Login :public Handle {};
+    struct Register :public Handle {};
+    template<>
+    decltype(auto) htmlHandle<Login,std::string, std::string>
+    (std::string & user_name, std::string & password)
+    {
+        // auto select_req = fmt::format("select password from user_password where user_name = '{}'",user_name);
+        mysqlpp::Query query = DATABASE::database_conn.query(fmt::format("select password from user_password where user_name = '{}'",user_name));
+        if(auto res = query.store())
+        {
+            if(res.empty())
+            {
+                return std::string("afterlogin/login_fail.html");
+            }
+            auto row = *res.begin();
+            std::string real_password = row[0].c_str();
+            if(real_password == password)
+            {
+                return std::string("afterlogin/login_succ.html");
+            }
+        }
+        return std::string("afterlogin/login_fail.html");        
+    }
+    template<>
+    decltype(auto) htmlHandle<regist,std::string, std::string>
+    (std::string & user_name, std::string & password)
+    {
+        try
+        {
+            mysqlpp::Query query = DATABASE::database_conn.query(fmt::format("insert into user_password values(\"{}\",\"{}\")",user_name,password));
+            query.execute();
+        }
+        catch(const std::exception& e)
+        {
+            std::cerr << e.what() << '\n';
+            return std::string("public/sign_up.html");
+        }
+        return std::string("public/sign_up.html");
+    }
 };
 
-
-
-
-inline std::string loginHandler(std::string_view user_name,std::string_view password)
-{
-    if(user_name == "llz" &&password == "123")
-        return "afterlogin/login_succ.html";
-    return "afterlogin/login_fail.html";
-}
-
-inline std::string registerHandler(std::string_view user_name,std::string_view password)
-{
-    return "";
-}

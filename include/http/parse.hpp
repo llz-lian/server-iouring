@@ -9,6 +9,8 @@
 #include"../config.hpp"
 #include"../Buffer.hpp"
 #include"../io_uring_stuff.hpp"
+#include"./Handler.hpp"
+
 
 #include<sys/stat.h>
 #include<stdio.h>
@@ -17,10 +19,6 @@
 #include<sys/mman.h>
 
 enum class METHOD:int{GET,POST,NONE};
-
-
-
-
 
 class ParseHttpHead
 {
@@ -142,25 +140,30 @@ class ParseHttpHead
         }
         // find ?
         std::string_view arg_line;
+        std::string_view file_name;
         for(int i = url.size()-1;i>=0;i--)
         {
             if(url[i] == '?')
             {
                 arg_line = url.substr(i+1,url.size()-i-1);
+                file_name = url.substr(0,i);
                 break;
             }
         }
         if(arg_line.empty())
         {
-            return fmt::format("public{}",url);
+            return fmt::format("public/{}",url);
         }
         auto args = getAndArgs(arg_line);
-        bool islogin = login(args["user"],args["password"]);
-        if(islogin)
+        if(file_name == "/login.html")
         {
-            return "afterlogin/login_succ.html";
+            return Handler::htmlHandle<Handler::Login>( args.at("user"),args.at("password"));
         }
-        return "afterlogin/login_fail.html";
+        else if(file_name == "/sign_up.html")
+        {
+            return Handler::htmlHandle<Handler::regist>(args.at("user"),args.at("password"));
+        }
+        return "public/index.html";
     }
 
     std::pair<size_t,std::string_view> parseHttpUrl_GET(std::string_view full_head,size_t start_index,request * req)
@@ -198,7 +201,6 @@ class ParseHttpHead
 
         // std::string_view key = kv.substr(0,split_index);
         // std::string_view value = kv.substr(split_index+1,kv.size()-split_index);
-
         return index;
     }
     void parseGet(std::string_view full_head,size_t start_index,request * req)
