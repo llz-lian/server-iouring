@@ -51,7 +51,7 @@ inline void appWrite(request * req)
     while(buffer_ptr!=nullptr)
     {
         sqe = io_uring_get_sqe(&__ring);
-        auto flag = buffer_ptr->next==nullptr?0u:IOSQE_IO_LINK;
+        auto flag = IOSQE_IO_LINK;
         io_uring_sqe_set_flags(sqe,flag);
         io_uring_prep_write(sqe,req->client_fd,buffer_ptr->mem,buffer_ptr->buffer_len,0);
         // io_uring_sqe_set_data(sqe,nullptr);
@@ -68,8 +68,13 @@ inline void appSend(request * req)
     while(buffer_ptr!=nullptr)
     {
         sqe = io_uring_get_sqe(&__ring);
-        io_uring_sqe_set_flags(sqe,IOSQE_IO_LINK);
-        io_uring_prep_send(sqe,req->client_fd,buffer_ptr->mem,buffer_ptr->buffer_len,0);
+        auto flags = IOSQE_IO_LINK;
+        if(buffer_ptr->next != nullptr)
+        {
+            flags = flags|IOSQE_CQE_SKIP_SUCCESS;
+        }
+        io_uring_sqe_set_flags(sqe,flags);
+        io_uring_prep_send(sqe,req->client_fd,buffer_ptr->mem,buffer_ptr->buffer_len,MSG_WAITALL);
         io_uring_sqe_set_data(sqe,nullptr);
         buffer_ptr = buffer_ptr->next;
     }

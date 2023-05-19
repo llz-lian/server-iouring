@@ -8,8 +8,6 @@ public:
     std::string_view protocol_name;
     Protocol(std::string_view name)
         :protocol_name(name)
-    {
-
-    }
+    {}
     virtual void work(request * req)=0;
 };
