@@ -74,6 +74,9 @@ inline void appSend(request * req)
             flags = flags|IOSQE_CQE_SKIP_SUCCESS;
         }
         io_uring_sqe_set_flags(sqe,flags);
+        // why cant zc?
+        // linux 5.20/6.0
+        // io_uring_prep_send_zc(sqe,req->client_fd,buffer_ptr->mem,buffer_ptr->buffer_len,MSG_WAITALL,0);
         io_uring_prep_send(sqe,req->client_fd,buffer_ptr->mem,buffer_ptr->buffer_len,MSG_WAITALL);
         io_uring_sqe_set_data(sqe,nullptr);
         buffer_ptr = buffer_ptr->next;
