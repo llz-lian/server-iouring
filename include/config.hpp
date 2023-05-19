@@ -2,10 +2,15 @@
 
 inline const char * const REDIS_IP = "172.17.186.5";
 constexpr inline int REDIS_PORT = 6439;
-
 constexpr inline int DEFALUT_PORT = 8000;
 constexpr inline int QUEUE_DEPTH = 512;
 constexpr inline int READ_SZ = 4096;
+
+
+inline const char * user_name = "password_keeper";
+inline const char * pass_word = "Password_!23";
+inline const char * password_database = "server_uring";
+
 inline const char * unimplemented_content = \
         "HTTP/1.0 400 Bad Request\r\n"
         "Content-type: text/html\r\n"

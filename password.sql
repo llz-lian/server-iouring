@@ -7,3 +7,5 @@ create table user_password(
 ); */
 
 select * from user_password;
+/* create user 'password_keeper'@'localhost' identified by 'Password_!23';
+grant select,alter,insert on server_uring.user_password to 'password_keeper'@'localhost'; */

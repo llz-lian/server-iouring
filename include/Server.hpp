@@ -94,7 +94,11 @@ public:
         :todo(p)
     {
         // init ring
-        io_uring_queue_init(QUEUE_DEPTH,&__ring, IORING_SETUP_SQPOLL);
+        if(int ret = io_uring_queue_init(QUEUE_DEPTH,&__ring, IORING_SETUP_SQPOLL);ret<0)
+        {
+            std::cerr<<strerror(-ret)<<std::endl;
+        }
+
         unsigned int max_workers []= {2,2};
         auto worker_ret = io_uring_register_iowq_max_workers(&__ring,max_workers);
         // set listen_fd

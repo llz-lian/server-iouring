@@ -13,9 +13,10 @@ int main()
     ::setsid();
     ::umask(0);
     auto proto = Http("HTTP");
-    bool conn = DATABASE::database_conn.connect("server_uring","localhost","root","llzllz123",0);
-    if(!conn)
+    bool conn = DATABASE::database_conn.connect(password_database,"localhost",user_name,pass_word,0);
+    if(!DATABASE::database_conn.connected())
     {
+        // need log
         return 0;
     }
     IoUringServer server(DEFALUT_PORT,&proto);

@@ -1,14 +1,20 @@
 #define MYSQLPP_MYSQL_HEADERS_BURIED
-
 #include<string>
 #include<string_view>
 #include<mysql++/mysql++.h>
 #include<fmt/core.h>
 #include<unordered_map>
+#include"../config.hpp"
 namespace DATABASE
 {
     inline mysqlpp::Connection database_conn;
     // bool conn = database_conn.connect("server_uring","localhost","root","llzllz123",0);
+    bool connect()
+    {
+        if(database_conn.connected())
+            return true;
+        return database_conn.connect(password_database,"localhost",user_name,pass_word,0);
+    }
 };
 namespace Handler
 {
@@ -21,7 +27,11 @@ namespace Handler
     decltype(auto) htmlHandle<Login,std::string, std::string>
     (std::string & user_name, std::string & password)
     {
-        // auto select_req = fmt::format("select password from user_password where user_name = '{}'",user_name);
+        if(!DATABASE::connect())
+        {
+            // database error
+            return std::string("public/index.html");
+        }
         mysqlpp::Query query = DATABASE::database_conn.query(fmt::format("select password from user_password where user_name = '{}'",user_name));
         if(auto res = query.store())
         {
@@ -42,6 +52,11 @@ namespace Handler
     decltype(auto) htmlHandle<regist,std::string, std::string>
     (std::string & user_name, std::string & password)
     {
+        if(!DATABASE::connect())
+        {
+            // database error
+            return std::string("public/index.html");
+        }
         try
         {
             mysqlpp::Query query = DATABASE::database_conn.query(fmt::format("insert into user_password values(\"{}\",\"{}\")",user_name,password));

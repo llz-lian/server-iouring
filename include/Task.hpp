@@ -65,6 +65,7 @@ public:
     {
         __handle = handle;
         handle.promise().req = __request;
+        ::memset(&client_addr,0,sizeof(client_addr));
         ::appAccept(&client_addr,&client_addr_len,__listen_fd, __request);
     }
     int await_resume()
