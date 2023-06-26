@@ -13,7 +13,11 @@ int main()
     ::setsid();
     ::umask(0);
     auto proto = Http("HTTP");
+
+    DATABASE::database_conn.set_option(new mysqlpp::ReconnectOption(true));
+    DATABASE::database_conn.set_option(new mysqlpp::ConnectTimeoutOption(5));
     bool conn = DATABASE::database_conn.connect(password_database,"localhost",user_name,pass_word,0);
+
     if(!DATABASE::database_conn.connected())
     {
         // need log
