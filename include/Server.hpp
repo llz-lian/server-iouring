@@ -73,13 +73,15 @@ private:
         req->client_fd = client_fd;
         // std::cout<<fmt::format("accept fd: {}",client_fd)<<std::endl;
         // int max_service_time = 2;
-        while(true)
+        PRO_STATE state = PRO_STATE::CONTINUE;
+        int read_num;
+        while(state == PRO_STATE::CONTINUE)
         {
-            int read_num = co_await rd;
+            read_num = co_await rd;
             // std::cout<<fmt::format("read data: {} bytes.",read_num)<<std::endl;
-            // read 0 need close ref: man recv
-            if(read_num == 0) break;
-            todo->work(req);
+            // read <= 0 need close ref: man recv
+            if(read_num <= 0) break;
+            state = todo->work(req);
             int write_num = co_await wt;
             // std::cout<<fmt::format("write data: {} bytes.",write_num)<<std::endl;
         }
@@ -88,7 +90,6 @@ private:
         delete req;
         // done
     }
-
 public:
     IoUringServer(int port,Protocol * p)
         :todo(p)

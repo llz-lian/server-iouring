@@ -6,6 +6,8 @@ constexpr inline int DEFALUT_PORT = 8000;
 constexpr inline int QUEUE_DEPTH = 512;
 constexpr inline int READ_SZ = 4096;
 
+constexpr inline int BUF_RING_LEN = 2048;
+
 
 inline const char * user_name = "password_keeper";
 inline const char * pass_word = "Password_!23";

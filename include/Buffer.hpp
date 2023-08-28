@@ -5,6 +5,8 @@
 #include<sys/stat.h>
 #include<string_view>
 #include<fcntl.h>
+
+#include<io_uring_stuff.hpp>
 struct Buffer
 {
     Buffer * next = nullptr;
@@ -87,6 +89,57 @@ struct Buffer
     }
 };
 
+
+
+
+// namespace BufferRing
+// {
+//     io_uring_buf_ring * buf_ring = nullptr;
+//     Buffer * buffer;
+
+//     void initBuffer()
+//     {
+//         buffer = new Buffer(READ_SZ);
+//         for(size_t i = 0;i<BUF_RING_LEN;i++)
+//         {
+//             buffer->appendNext(READ_SZ);
+//         }
+//     }
+//     io_uring_buf_ring* initBufferRing()
+//     {
+//         // init buffer ring
+//         io_uring_buf_reg reg = { };
+//         if (posix_memalign((void **) &buf_ring, 4096,BUF_RING_LEN * sizeof(struct io_uring_buf_ring)))
+// 		    return nullptr;
+//         reg.bgid = 0;
+//         reg.ring_addr = reinterpret_cast<unsigned long long>(buf_ring);
+//         reg.ring_entries = BUF_RING_LEN;
+
+//         if(int ret = io_uring_register_buf_ring(&__ring,&reg,0);ret<0)
+//         {
+//             //err
+//             return nullptr;
+//         }
+//         io_uring_buf_ring_init(buf_ring);
+//         // append buffers
+//         initBuffer();
+//         for(size_t i = 0 ;i<BUF_RING_LEN;i++)
+//         {
+//             io_uring_buf_ring_add(
+//                 buf_ring,
+//                 buffer->mem,
+//                 buffer->buffer_len,
+//                 i,
+//                 io_uring_buf_ring_mask(BUF_RING_LEN),
+//                 i
+//             );
+//             buffer = buffer->next;
+//         }
+//         // visible to kernel
+//         io_uring_buf_ring_advance(buf_ring,BUF_RING_LEN);
+//         return buf_ring;
+//     }
+// };
 
 
 
